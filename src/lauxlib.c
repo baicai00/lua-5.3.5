@@ -634,11 +634,11 @@ LUALIB_API void luaL_unref (lua_State *L, int t, int ref) {
 
 typedef struct LoadF {
   int n;  /* number of pre-read characters */
-  FILE *f;  /* file being read */
+  FILE *f;  /* file being read */ //调用luaL_dofile时，在luaL_loadfilex中保存使用fopen打开的文件句柄
   char buff[BUFSIZ];  /* area for reading file */
 } LoadF;
 
-
+// 如果lf->f所指文件已被读取过，即lf->n大于0，则返回lf->buff,否则读取文件至lf->buff,并返回lf->buff,出参size用于存放读取到的字节数
 static const char *getF (lua_State *L, void *ud, size_t *size) {
   LoadF *lf = (LoadF *)ud;
   (void)L;  /* not used */
@@ -665,7 +665,7 @@ static int errfile (lua_State *L, const char *what, int fnameindex) {
   return LUA_ERRFILE;
 }
 
-
+//跳过UTF-8 BOM编码标记，并返回lf->f所指的字符
 static int skipBOM (LoadF *lf) {
   const char *p = "\xEF\xBB\xBF";  /* UTF-8 BOM mark */
   int c;
@@ -688,7 +688,9 @@ static int skipBOM (LoadF *lf) {
 ** a first-line comment).
 */
 static int skipcomment (LoadF *lf, int *cp) {
+  //跳过UTF-8 BOM编码标记
   int c = *cp = skipBOM(lf);
+  //如果第一行以"#"开头,则跳过第一行,并返回1,否则返回零;cp存放当前未处理的第一个字符
   if (c == '#') {  /* first line is a comment (Unix exec. file)? */
     do {  /* skip first line */
       c = getc(lf->f);
@@ -711,7 +713,7 @@ LUALIB_API int luaL_loadfilex (lua_State *L, const char *filename,
     lf.f = stdin;
   }
   else {
-    lua_pushfstring(L, "@%s", filename);
+    lua_pushfstring(L, "@%s", filename);//将lua脚本的文件名存入栈中，使用深拷贝
     lf.f = fopen(filename, "r");
     if (lf.f == NULL) return errfile(L, "open", fnameindex);
   }

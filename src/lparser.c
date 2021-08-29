@@ -1629,6 +1629,15 @@ LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff,
   FuncState funcstate;
   LClosure *cl = luaF_newLclosure(L, 1);  /* create main closure */
   setclLvalue(L, L->top, cl);  /* anchor it (to avoid being collected) */
+  //setclLvalue展开后如下所示
+  /*{ 
+    TValue *io = L->top; 
+    LClosure *x_ = cl; 
+    (io->value_).gc = &(((union GCUnion *)x_)->gc); 
+    io->tt_= (6 | (0 << 4)) | (1 << 6); 
+    ((void)0); 
+  }*/
+
   luaD_inctop(L);
   lexstate.h = luaH_new(L);  /* create table for scanner */
   sethvalue(L, L->top, lexstate.h);  /* anchor it */

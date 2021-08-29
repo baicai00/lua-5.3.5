@@ -179,6 +179,7 @@ void luaD_reallocstack (lua_State *L, int newsize) {
   int lim = L->stacksize;
   lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
   lua_assert(L->stack_last - L->stack == L->stacksize - EXTRA_STACK);
+  //重新分配L->stack,大小由L->stacksize变为newsize
   luaM_reallocvector(L, L->stack, L->stacksize, newsize, TValue);
   for (; lim < newsize; lim++)
     setnilvalue(L->stack + lim); /* erase new segment */
@@ -766,6 +767,10 @@ static void checkmode (lua_State *L, const char *mode, const char *x) {
 static void f_parser (lua_State *L, void *ud) {
   LClosure *cl;
   struct SParser *p = cast(struct SParser *, ud);
+  /*zgetc用于读取被解析脚本的第一个字节，如果被解析脚本的内容未
+	被读入ZIO->p所指的缓冲区，则调用luaZ_fill函数读取并填入ZIO->p，
+	然后返回第一个字节。
+	注意：此时被解析脚本的第一个字节已经是去除UTF-8 BOM标记与首行注释后的第一个字节*/
   int c = zgetc(p->z);  /* read first character */
   if (c == LUA_SIGNATURE[0]) {
     checkmode(L, p->mode, "binary");
